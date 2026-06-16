@@ -1,6 +1,6 @@
 /**
- * Question Bank - مدیریت بانک سوالات (نسخه نهایی)
- * @version 2.0.0
+ * Question Bank - مدیریت بانک سوالات (نسخه نهایی با همگام‌سازی)
+ * @version 2.1.0
  */
 
 class QuestionBank {
@@ -12,8 +12,9 @@ class QuestionBank {
         this.loadQuestions();
     }
 
-    loadQuestions() {
-        const saved = this.storage.getQuestions();
+    async loadQuestions() {
+        // دریافت سوالات از storage (که از Supabase می‌خواند)
+        const saved = await this.storage.getQuestions();
         if (saved && saved.length > 0) {
             this.questions = saved;
             // حذف شماره‌های اضافی از سوالات موجود
@@ -27,7 +28,6 @@ class QuestionBank {
         }
     }
 
-    // حذف شماره سوال از متن (مانند "(سوال شماره ۱)")
     cleanQuestionText(text) {
         return text.replace(/\s*\(سوال\s*شماره\s*\d+\)/gi, '').trim();
     }
@@ -58,8 +58,8 @@ class QuestionBank {
         this.saveQuestions();
     }
 
-    saveQuestions() {
-        this.storage.saveQuestions(this.questions);
+    async saveQuestions() {
+        await this.storage.saveQuestions(this.questions);
     }
 
     getAllQuestions() {
@@ -75,7 +75,6 @@ class QuestionBank {
         return this.questions.filter(q => q.category === category);
     }
 
-    // ===== دریافت سوالات تصادفی با پشتیبانی از دسته‌بندی =====
     getRandomQuestions(count, shuffle = true, categories = null) {
         let selected = [];
         
@@ -131,40 +130,39 @@ class QuestionBank {
         };
     }
 
-    addQuestion(questionData) {
+    async addQuestion(questionData) {
         const newId = this.questions.length > 0 ? Math.max(...this.questions.map(q => q.id)) + 1 : 1;
         questionData.question = this.cleanQuestionText(questionData.question);
         this.questions.push({ id: newId, ...questionData });
-        this.saveQuestions();
+        await this.saveQuestions();
         return true;
     }
 
-    updateQuestion(id, updatedData) {
+    async updateQuestion(id, updatedData) {
         const index = this.questions.findIndex(q => q.id === parseInt(id));
         if (index !== -1) {
             updatedData.question = this.cleanQuestionText(updatedData.question);
             this.questions[index] = { ...this.questions[index], ...updatedData, id: parseInt(id) };
-            this.saveQuestions();
+            await this.saveQuestions();
             return true;
         }
         return false;
     }
 
-    deleteQuestion(id) {
+    async deleteQuestion(id) {
         const index = this.questions.findIndex(q => q.id === parseInt(id));
         if (index !== -1) {
             this.questions.splice(index, 1);
-            this.saveQuestions();
+            await this.saveQuestions();
             return true;
         }
         return false;
     }
 
-    // ===== حذف همه سوالات =====
-    deleteAllQuestions() {
+    async deleteAllQuestions() {
         if (confirm('⚠️ آیا از حذف تمام سوالات اطمینان دارید؟ این عمل غیرقابل بازگشت است.')) {
             this.questions = [];
-            this.saveQuestions();
+            await this.saveQuestions();
             return true;
         }
         return false;
@@ -178,7 +176,7 @@ class QuestionBank {
         );
     }
 
-    importQuestions(questions) {
+    async importQuestions(questions) {
         if (!Array.isArray(questions)) return false;
         const isValid = questions.every(q =>
             q.id && q.category && q.level && q.question &&
@@ -191,7 +189,7 @@ class QuestionBank {
                 return q;
             });
             this.questions = questions;
-            this.saveQuestions();
+            await this.saveQuestions();
             return true;
         }
         return false;
@@ -204,6 +202,12 @@ class QuestionBank {
     getCategories() {
         const cats = this.questions.map(q => q.category);
         return [...new Set(cats)];
+    }
+
+    // ===== همگام‌سازی دستی با Supabase =====
+    async syncQuestions() {
+        await this.storage.syncQuestions();
+        await this.loadQuestions();
     }
 }
 
