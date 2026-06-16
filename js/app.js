@@ -1,6 +1,6 @@
 /**
- * App - کنترلر اصلی برنامه (هماهنگ با ExamEngine جدید)
- * @version 2.0.0
+ * App - کنترلر اصلی برنامه (نسخه اصلاح‌شده)
+ * @version 2.1.0
  */
 class App {
     constructor() {
@@ -99,7 +99,6 @@ class App {
             return;
         }
 
-        // شروع آزمون با await
         const examStart = await this.examEngine.startNewExam(userData);
         if (examStart.success) {
             this.startExamUI();
@@ -116,57 +115,33 @@ class App {
     }
 
     loadCurrentQuestion() {
-    const current = this.examEngine.getCurrentQuestion();
-    if (!current) return;
+        const current = this.examEngine.getCurrentQuestion();
+        if (!current) return;
 
-    const container = document.getElementById('questionContainer');
-    const counter = document.getElementById('questionCounter');
+        const container = document.getElementById('questionContainer');
+        const counter = document.getElementById('questionCounter');
 
-    if (counter) {
-        // فقط شماره ترتیبی نمایش داده شود (نه شماره اصلی سوال)
-        counter.textContent = `سوال ${current.index + 1} از ${current.total}`;
-    }
-
-    const question = current.question;
-    let html = `
-        <div class="question-text">
-            <strong>${question.question}</strong>
-        </div>
-        <div class="options-list">
-    `;
-
-    question.options.forEach((option, idx) => {
-        const isSelected = current.savedAnswer === idx;
-        html += `
-            <div class="option-item ${isSelected ? 'selected' : ''}" data-option-index="${idx}">
-                <input type="radio" name="answer" value="${idx}" ${isSelected ? 'checked' : ''} class="option-radio">
-                <label>${option}</label>
-            </div>
-        `;
-    });
-
-    html += `</div>`;
-    container.innerHTML = html;
-
-    document.querySelectorAll('.option-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            const radio = item.querySelector('input[type="radio"]');
-            if (radio) {
-                radio.checked = true;
-                this.saveCurrentAnswer(parseInt(item.dataset.optionIndex));
-            }
-        });
-
-        const radio = item.querySelector('input[type="radio"]');
-        if (radio) {
-            radio.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    this.saveCurrentAnswer(parseInt(item.dataset.optionIndex));
-                }
-            });
+        if (counter) {
+            counter.textContent = `سوال ${current.index + 1} از ${current.total}`;
         }
-    });
-}
+
+        const question = current.question;
+        let html = `
+            <div class="question-text">
+                <strong>${question.question}</strong>
+            </div>
+            <div class="options-list">
+        `;
+
+        question.options.forEach((option, idx) => {
+            const isSelected = current.savedAnswer === idx;
+            html += `
+                <div class="option-item ${isSelected ? 'selected' : ''}" data-option-index="${idx}">
+                    <input type="radio" name="answer" value="${idx}" ${isSelected ? 'checked' : ''} class="option-radio">
+                    <label>${option}</label>
+                </div>
+            `;
+        });
 
         html += `</div>`;
         container.innerHTML = html;
